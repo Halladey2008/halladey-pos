@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halladey  - Punto de Venta</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8; --secondary: #64748b;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --info: #06b6d4; --bg: #f8fafc; --card: #ffffff;
+            --text: #1e293b; --text-light: #475569; --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1); --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --radius: 12px; --radius-sm: 8px;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--card); border-bottom: 1px solid var(--border);
+            padding: 12px 24px; display: flex; justify-content: space-between;
+            align-items: center; position: sticky; top: 0; z-index: 100;
+        }
+        .app-header .brand {
+            display: flex; align-items: center; gap: 10px; font-size: 1.25rem;
+            font-weight: 700; color: var(--primary);
+        }
+        .app-header .seller-info {
+            display: flex; align-items: center; gap: 16px;
+        }
+        .seller-badge {
+            background: #dbeafe; color: var(--primary); padding: 6px 14px;
+            border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .header-actions { display: flex; gap: 8px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: var(--radius-sm); border: none;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { filter: brightness(0.95); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-ghost { background: transparent; color: var(--secondary); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--bg); }
+        .btn-lg { padding: 14px 28px; font-size: 1.1rem; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Layout */
+        .pos-layout {
+            display: grid; grid-template-columns: 1fr 380px;
+            gap: 20px; padding: 20px; max-width: 1600px; margin: 0 auto;
+        }
+
+        /* Product Grid */
+        .products-area { display: flex; flex-direction: column; gap: 16px; }
+        .search-bar {
+            display: flex; gap: 12px; align-items: center;
+        }
+        .search-input {
+            flex: 1; padding: 12px 16px 12px 44px; border: 1px solid var(--border);
+            border-radius: var(--radius); font-size: 1rem; background: var(--card);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: 14px center;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .category-pills {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .pill {
+            padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border);
+            background: var(--card); cursor: pointer; font-size: 0.85rem; font-weight: 500;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .pill:hover { border-color: var(--primary); color: var(--primary); }
+        .pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .products-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .product-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px; cursor: pointer;
+            transition: all 0.2s; text-align: center; position: relative;
+        }
+        .product-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+        .product-card:active { transform: scale(0.98); }
+        .product-card.out-of-stock { opacity: 0.5; pointer-events: none; }
+        .product-card .emoji { font-size: 2.5rem; margin-bottom: 8px; }
+        .product-card .name { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-card .price { color: var(--primary); font-weight: 700; font-size: 1.1rem; }
+        .product-card .stock-badge {
+            position: absolute; top: 8px; right: 8px; font-size: 0.7rem;
+            padding: 2px 8px; border-radius: 10px; font-weight: 600;
+        }
+        .stock-badge.ok { background: #d1fae5; color: #065f46; }
+        .stock-badge.low { background: #fef3c7; color: #92400e; }
+
+        /* Cart Panel */
+        .cart-panel {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); display: flex; flex-direction: column;
+            height: calc(100vh - 80px); position: sticky; top: 76px;
+        }
+        .cart-header {
+            padding: 20px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .cart-header h3 { font-size: 1.1rem; }
+        .cart-items {
+            flex: 1; overflow-y: auto; padding: 12px;
+        }
+        .cart-item {
+            display: flex; gap: 12px; padding: 12px; border-radius: var(--radius-sm);
+            margin-bottom: 8px; background: #f8fafc; align-items: center;
+        }
+        .cart-item .item-info { flex: 1; min-width: 0; }
+        .cart-item .item-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cart-item .item-price { color: var(--text-light); font-size: 0.8rem; }
+        .qty-controls {
+            display: flex; align-items: center; gap: 4px;
+        }
+        .qty-btn {
+            width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+            background: white; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-weight: 700; font-size: 1rem;
+        }
+        .qty-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .qty-value { min-width: 28px; text-align: center; font-weight: 700; }
+        .item-total { font-weight: 700; color: var(--primary); min-width: 60px; text-align: right; }
+        .remove-btn {
+            width: 24px; height: 24px; border-radius: 6px; border: none;
+            background: #fee2e2; color: var(--danger); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .remove-btn:hover { background: var(--danger); color: white; }
+        .cart-empty {
+            text-align: center; padding: 40px 20px; color: var(--text-light);
+        }
+        .cart-empty .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+        .cart-footer {
+            padding: 20px; border-top: 2px solid var(--border);
+            background: #f8fafc; border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .cart-summary { margin-bottom: 16px; }
+        .summary-row {
+            display: flex; justify-content: space-between; padding: 6px 0;
+            font-size: 0.95rem;
+        }
+        .summary-row.total {
+            border-top: 2px solid var(--border); padding-top: 12px;
+            margin-top: 8px; font-size: 1.25rem; font-weight: 800;
+        }
+        .cart-actions { display: flex; gap: 8px; }
+        .cart-actions .btn { flex: 1; justify-content: center; }
+
+        /* Payment Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px); display: flex;
+            align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--card); border-radius: var(--radius);
+            width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+            transform: scale(0.95); transition: all 0.3s;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { font-size: 1.2rem; }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 8px; border: none;
+            background: var(--bg); cursor: pointer;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px; border-top: 1px solid var(--border);
+            display: flex; justify-content: flex-end; gap: 8px;
+        }
+
+        /* Payment methods */
+        .payment-methods {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;
+        }
+        .pay-method {
+            padding: 16px 8px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+            text-align: center; cursor: pointer; transition: all 0.2s; background: white;
+        }
+        .pay-method:hover { border-color: var(--primary); }
+        .pay-method.active { border-color: var(--primary); background: #eff6ff; }
+        .pay-method .icon { font-size: 1.5rem; margin-bottom: 6px; }
+        .pay-method .label { font-size: 0.8rem; font-weight: 600; }
+        .amount-display {
+            background: #f0fdf4; border: 2px solid var(--success); border-radius: var(--radius);
+            padding: 20px; text-align: center; margin-bottom: 20px;
+        }
+        .amount-display .label { color: var(--text-light); font-size: 0.9rem; margin-bottom: 4px; }
+        .amount-display .value { font-size: 2rem; font-weight: 800; color: var(--success); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 16px; border: 1px solid var(--border);
+            border-radius: var(--radius-sm); font-size: 1rem; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        /* Receipt */
+        .receipt {
+            background: white; border: 1px dashed #ccc; padding: 24px;
+            font-family: 'Courier New', monospace; font-size: 0.85rem;
+            max-width: 320px; margin: 0 auto;
+        }
+        .receipt-header { text-align: center; margin-bottom: 16px; border-bottom: 1px dashed #ccc; padding-bottom: 12px; }
+        .receipt-header h4 { font-size: 1rem; margin-bottom: 4px; }
+        .receipt-header p { color: #666; font-size: 0.75rem; }
+        .receipt-items { margin-bottom: 12px; }
+        .receipt-item { display: flex; justify-content: space-between; padding: 4px 0; }
+        .receipt-total { border-top: 1px dashed #ccc; padding-top: 8px; margin-top: 8px; font-weight: bold; }
+        .receipt-footer { text-align: center; margin-top: 16px; font-size: 0.75rem; color: #666; border-top: 1px dashed #ccc; padding-top: 12px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; background: var(--card); padding: 4px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--border); }
+        .tab { flex: 1; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; border: none; background: transparent; }
+        .tab.active { background: var(--primary); color: white; }
+        .tab:hover:not(.active) { background: var(--bg); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Sales History */
+        .sales-filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .sales-filters input, .sales-filters select {
+            padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-size: 0.9rem; background: var(--card);
+        }
+        .sales-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .sales-table th { text-align: left; padding: 12px 16px; font-weight: 600; color: var(--text-light); border-bottom: 2px solid var(--border); }
+        .sales-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .sales-table tr:hover { background: #f8fafc; }
+        .status-badge {
+            display: inline-flex; padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 2000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            background: var(--card); padding: 14px 18px; border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg); display: flex; align-items: center;
+            gap: 10px; min-width: 280px; animation: slideIn 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateX(100%); } }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pos-layout { grid-template-columns: 1fr; }
+            .cart-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 60vh;
+                border-radius: var(--radius) var(--radius) 0 0; transform: translateY(100%);
+                transition: transform 0.3s; z-index: 90;
+            }
+            .cart-panel.open { transform: translateY(0); }
+            .cart-toggle {
+                position: fixed; bottom: 20px; right: 20px; z-index: 95;
+                width: 56px; height: 56px; border-radius: 50%;
+                background: var(--primary); color: white; border: none;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.5rem; cursor: pointer; box-shadow: var(--shadow-lg);
+            }
+            .cart-toggle .badge {
+                position: absolute; top: -4px; right: -4px;
+                background: var(--danger); color: white; width: 22px; height: 22px;
+                border-radius: 50%; font-size: 0.75rem; display: flex;
+                align-items: center; justify-content: center; font-weight: 700;
+            }
+        }
+        @media (min-width: 1025px) { .cart-toggle { display: none; } }
+
+        /* Print */
+        @media print {
+            .app-header, .search-bar, .category-pills, .cart-panel, .cart-toggle,
+            .btn, .tabs, .sales-filters, .modal-overlay { display: none !important; }
+            .pos-layout { grid-template-columns: 1fr; padding: 0; }
+            .receipt { border: none; max-width: 100%; }
+        }
+
+        /* Seller login */
+        .login-screen {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-card {
+            background: var(--card); padding: 40px; border-radius: var(--radius);
+            box-shadow: var(--shadow-lg); width: 90%; max-width: 400px;
+        }
+        .login-card h2 { text-align: center; margin-bottom: 8px; color: var(--primary); }
+        .login-card p { text-align: center; color: var(--text-light); margin-bottom: 24px; }
+        .login-card .form-group { margin-bottom: 16px; }
+        .login-card .btn { width: 100%; justify-content: center; margin-top: 8px; }
+
+        /* Quick quantity buttons */
+        .quick-qty {
+            display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
+        }
+        .quick-qty button {
+            padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
+            background: white; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+        }
+        .quick-qty button:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <h2>🛒 Ventas </h2>
+            <p>Ingresa tus datos para comenzar</p>
+            <div class="form-group">
+                <label>Nombre del Vendedor</label>
+                <input type="text" id="sellerNameInput" placeholder="Ej: Juan Pérez" value="Vendedor 1">
+            </div>
+            <div class="form-group">
+                <label>Código de Acceso (opcional)</label>
+                <input type="password" id="sellerPinInput" placeholder="****">
+            </div>
+            <button class="btn btn-primary btn-lg" onclick="loginSeller()">Iniciar Sesión</button>
+            <p style="text-align:center; margin-top:16px; font-size:0.85rem; color:var(--text-light);">
+                <a href="inventario.html" style="color:var(--primary);">← Ir al Panel de Administración</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" style="display:none;">
+        <header class="app-header">
+            <div class="brand">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Ventas
+            </div>
+            <div class="seller-info">
+                <div class="seller-badge">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span id="sellerDisplayName">Vendedor</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost" onclick="showTab('sell')">🛒 Vender</button>
+                    <button class="btn btn-ghost" onclick="showTab('history')">📋 Historial</button>
+                    <button class="btn btn-ghost" onclick="showTab('close')">💰 Cierre</button>
+                    <button class="btn btn-secondary btn-sm" onclick="logoutSeller()">Salir</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- SELL TAB -->
+        <div id="tab-sell" class="tab-content active">
+            <div class="pos-layout">
+                <div class="products-area">
+                    <div class="search-bar">
+                        <input type="text" class="search-input" id="productSearch" placeholder="Buscar producto por nombre o código..." oninput="filterProducts()">
+                    </div>
+                    <div class="category-pills" id="categoryPills">
+                        <button class="pill active" onclick="filterByCategory('')">Todos</button>
+                    </div>
+                    <div class="products-grid" id="productsGrid"></div>
+                </div>
+
+                <div class="cart-panel" id="cartPanel">
+                    <div class="cart-header">
+                        <h3>🛒 Ticket de Venta</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="clearCart()">Vaciar</button>
+                    </div>
+                    <div class="cart-items" id="cartItems">
+                        <div class="cart-empty">
+                            <div class="icon">🛒</div>
+                            <p>Agrega productos al ticket</p>
+                        </div>
+                    </div>
+                    <div class="cart-footer">
+                        <div class="cart-summary">
+                            <div class="summary-row"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+                            <div class="summary-row"><span>Descuento</span><span>-$0.00</span></div>
+                            <div class="summary-row total"><span>TOTAL</span><span id="cartTotal">$0.00</span></div>
+                        </div>
+                        <div class="cart-actions">
+                            <button class="btn btn-success btn-lg" onclick="openPaymentModal()" id="checkoutBtn" disabled>
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                Cobrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="tab-history" class="tab-content">
+            <div style="max-width:1200px; margin:0 auto; padding:20px;">
+                <div class="card">
+                    <div class="card-header"><h3>📋 Historial de Ventas</h3></div>
+                    <div class="card-body">
+                        <div class="sales-filters">
+                            <input type="date" id="historyDateFrom" onchange="renderSalesHistory()">
+                            <input type="date" id="historyDateTo" onchange="renderSalesHistory()">
+                            <select id="historyPaymentFilter" onchange="renderSalesHistory()">
+                                <option value="">Todos los métodos</option>
+                                <option value="cash">Efectivo</option>
+                                <option value="card">Tarjeta</option>
+                                <option value="transfer">Transferencia</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" onclick="printSalesReport()">🖨️ Imprimir</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="sales-table">
+                                <thead>
+                                    <tr><th>Folio</th><th>Fecha</th><th>Vendedor</th><th>Productos</th><th>Total</th><th>Método</th><th>Estado</th><th>Acciones</th></tr>
+                                </thead>
+                                <tbody id="salesHistoryTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="historyPagination"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLOSE TAB -->
+        <div id="tab-close" class="tab-content">
+            <div style="max-width:800px; margin:0 auto; padding:20px;">
+                <div class="card">
+                    <div class="card-header"><h3>💰 Cierre de Caja</h3></div>
+                    <div class="card-body">
+                        <div id="closeSummary"></div>
+                        <div style="margin-top:20px; display:flex; gap:12px;">
+                            <button class="btn btn-primary" onclick="generateCloseReport()">Generar Cierre</button>
+                            <button class="btn btn-secondary" onclick="printCloseReport()">🖨️ Imprimir Cierre</button>
+                        </div>
+                        <div id="closeReportArea" style="margin-top:24px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>💳 Confirmar Pago</h3>
+                <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="amount-display">
+                    <div class="label">Total a pagar</div>
+                    <div class="value" id="paymentTotal">$0.00</div>
+                </div>
+                <div class="payment-methods">
+                    <div class="pay-method active" onclick="selectPayment('cash')">
+                        <div class="icon">💵</div>
+                        <div class="label">Efectivo</div>
+                    </div>
+                    <div class="pay-method" onclick="selectPayment('card')">
+                        <div class="icon">💳</div>
+                        <div class="label">Tarjeta</div>
+                    </div>
+                    <div class="pay-method" onclick="selectPayment('transfer')">
+                        <div class="icon">📱</div>
+                        <div class="label">Transferencia</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Monto Recibido</label>
+                    <input type="number" id="amountReceived" step="0.01" placeholder="0.00" oninput="calculateChange()">
+                </div>
+                <div class="form-group">
+                    <label>Cambio</label>
+                    <input type="text" id="changeAmount" readonly value="$0.00" style="font-weight:700; color:var(--success);">
+                </div>
+                <div class="form-group">
+                    <label>Notas (opcional)</label>
+                    <textarea id="saleNotes" rows="2" placeholder="Notas sobre la venta..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('paymentModal')">Cancelar</button>
+                <button class="btn btn-success btn-lg" onclick="completeSale()">✓ Completar Venta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sale Detail Modal -->
+    <div class="modal-overlay" id="saleDetailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📄 Detalle de Venta</h3>
+                <button class="modal-close" onclick="closeModal('saleDetailModal')">✕</button>
+            </div>
+            <div class="modal-body" id="saleDetailBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('saleDetailModal')">Cerrar</button>
+                <button class="btn btn-secondary" onclick="printSaleDetail()">🖨️ Imprimir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Cart Toggle -->
+    <button class="cart-toggle" id="cartToggle" onclick="toggleCart()">
+        🛒
+        <span class="badge" id="cartBadge" style="display:none;">0</span>
+    </button>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==================== DATA STORE (shared with inventory) ====================
+        const Store = {
+            get(key) {
+                try { return JSON.parse(localStorage.getItem(`inv_${key}`)) || []; }
+                catch { return []; }
+            },
+            set(key, value) { localStorage.setItem(`inv_${key}`, JSON.stringify(value)); },
+            getSettings() {
+                try { return JSON.parse(localStorage.getItem('inv_settings')) || { currency: '$', businessName: 'Mi Negocio' }; }
+                catch { return { currency: '$', businessName: 'Mi Negocio' }; }
+            }
+        };
+
+        // ==================== STATE ====================
+        let currentSeller = null;
+        let cart = [];
+        let selectedPayment = 'cash';
+        let currentCategory = '';
+        let historyPage = 1;
+        const historyPerPage = 15;
+
+        // ==================== LOGIN ====================
+        function loginSeller() {
+            const name = document.getElementById('sellerNameInput').value.trim();
+            if (!name) { showToast('Ingresa tu nombre', 'error'); return; }
+            currentSeller = { name, loginTime: new Date().toISOString(), id: 'seller_' + Date.now() };
+            localStorage.setItem('pos_current_seller', JSON.stringify(currentSeller));
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('sellerDisplayName').textContent = name;
+            initApp();
+        }
+
+        function logoutSeller() {
+            if (cart.length > 0 && !confirm('Tienes productos en el ticket. ¿Seguro que quieres salir?')) return;
+            localStorage.removeItem('pos_current_seller');
+            currentSeller = null; cart = [];
+            location.reload();
+        }
+
+        function checkSession() {
+            const saved = localStorage.getItem('pos_current_seller');
+            if (saved) {
+                currentSeller = JSON.parse(saved);
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                document.getElementById('sellerDisplayName').textContent = currentSeller.name;
+                initApp();
+            }
+        }
+
+        // ==================== INIT ====================
+        function initApp() {
+            renderCategories();
+            renderProducts();
+            renderCart();
+            renderSalesHistory();
+            renderCloseSummary();
+            // Set default dates for history
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('historyDateFrom').value = today;
+            document.getElementById('historyDateTo').value = today;
+        }
+
+        // ==================== PRODUCTS ====================
+        function renderCategories() {
+            const categories = Store.get('categories');
+            const container = document.getElementById('categoryPills');
+            container.innerHTML = `<button class="pill ${currentCategory === '' ? 'active' : ''}" onclick="filterByCategory('')">Todos</button>` +
+                categories.map(c => `<button class="pill ${currentCategory === c.id ? 'active' : ''}" onclick="filterByCategory('${c.id}')">${escapeHtml(c.name)}</button>`).join('');
+        }
+
+        function renderProducts() {
+            const products = Store.get('products');
+            const categories = Store.get('categories');
+            const search = document.getElementById('productSearch').value.toLowerCase();
+            const settings = Store.getSettings();
+
+            let filtered = products.filter(p => {
+                if (currentCategory && p.categoryId !== currentCategory) return false;
+                if (search && !p.name.toLowerCase().includes(search) && !p.sku.toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            const grid = document.getElementById('productsGrid');
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-light);"><div style="font-size:3rem; margin-bottom:12px;">🔍</div><p>No se encontraron productos</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => {
+                const cat = categories.find(c => c.id === p.categoryId);
+                const stockClass = p.stock === 0 ? 'out-of-stock' : p.stock <= (p.minStock || 10) ? 'low' : 'ok';
+                const stockText = p.stock === 0 ? 'Sin stock' : `${p.stock} disp.`;
+                return `
+                    <div class="product-card ${p.stock === 0 ? 'out-of-stock' : ''}" onclick="addToCart('${p.id}')">
+                        <span class="stock-badge ${stockClass}">${stockText}</span>
+                        <div class="emoji">${getEmoji(p.name)}</div>
+                        <div class="name">${escapeHtml(p.name)}</div>
+                        <div class="price">${formatMoney(p.price)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterProducts() { renderProducts(); }
+        function filterByCategory(catId) { currentCategory = catId; renderCategories(); renderProducts(); }
+
+        // ==================== CART ====================
+        function addToCart(productId) {
+            const products = Store.get('products');
+            const product = products.find(p => p.id === productId);
+            if (!product || product.stock <= 0) { showToast('Producto sin stock', 'error'); return; }
+
+            const existing = cart.find(item => item.productId === productId);
+            if (existing) {
+                if (existing.qty >= product.stock) { showToast('Stock máximo alcanzado', 'warning'); return; }
+                existing.qty++;
+            } else {
+                cart.push({ productId, name: product.name, price: product.price, qty: 1, stock: product.stock });
+            }
+            renderCart();
+            showToast(`${product.name} agregado`, 'success');
+        }
+
+        function updateQty(productId, delta) {
+            const item = cart.find(i => i.productId === productId);
+            if (!item) return;
+            const newQty = item.qty + delta;
+            if (newQty <= 0) { removeFromCart(productId); return; }
+            if (newQty > item.stock) { showToast('Stock insuficiente', 'warning'); return; }
+            item.qty = newQty;
+            renderCart();
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(i => i.productId !== productId);
+            renderCart();
+        }
+
+        function clearCart() {
+            if (cart.length === 0) return;
+            if (!confirm('¿Vaciar el ticket?')) return;
+            cart = []; renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const settings = Store.getSettings();
+            const badge = document.getElementById('cartBadge');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+
+            const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
+            badge.textContent = totalItems;
+            badge.style.display = totalItems > 0 ? 'flex' : 'none';
+            checkoutBtn.disabled = cart.length === 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="cart-empty"><div class="icon">🛒</div><p>Agrega productos al ticket</p></div>`;
+                document.getElementById('subtotal').textContent = formatMoney(0);
+                document.getElementById('cartTotal').textContent = formatMoney(0);
+                return;
+            }
+
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            document.getElementById('subtotal').textContent = formatMoney(subtotal);
+            document.getElementById('cartTotal').textContent = formatMoney(subtotal);
+
+            container.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div class="item-info">
+                        <div class="item-name">${escapeHtml(item.name)}</div>
+                        <div class="item-price">${formatMoney(item.price)} c/u</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="updateQty('${item.productId}', -1)">−</button>
+                        <span class="qty-value">${item.qty}</span>
+                        <button class="qty-btn" onclick="updateQty('${item.productId}', 1)">+</button>
+                    </div>
+                    <div class="item-total">${formatMoney(item.price * item.qty)}</div>
+                    <button class="remove-btn" onclick="removeFromCart('${item.productId}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function toggleCart() {
+            document.getElementById('cartPanel').classList.toggle('open');
+        }
+
+        // ==================== PAYMENT ====================
+        function openPaymentModal() {
+            if (cart.length === 0) return;
+            const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            document.getElementById('paymentTotal').textContent = formatMoney(total);
+            document.getElementById('amountReceived').value = '';
+            document.getElementById('changeAmount').value = formatMoney(0);
+            document.getElementById('saleNotes').value = '';
+            selectPayment('cash');
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        function selectPayment(method) {
+            selectedPayment = method;
+            document.querySelectorAll('.pay-method').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function calculateChange() {
+            const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const received = parseFloat(document.getElementById('amountReceived').value) || 0;
+            const change = received - total;
+            document.getElementById('changeAmount').value = formatMoney(change > 0 ? change : 0);
+        }
+
+        function completeSale() {
+            if (cart.length === 0) return;
+            const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const received = parseFloat(document.getElementById('amountReceived').value) || 0;
+
+            if (selectedPayment === 'cash' && received < total) {
+                showToast('El monto recibido es menor al total', 'error'); return;
+            }
+
+            // Build sale record
+            const sale = {
+                id: 'sale_' + Date.now(),
+                seller: currentSeller.name,
+                sellerId: currentSeller.id,
+                date: new Date().toISOString(),
+                items: cart.map(i => ({ ...i })),
+                total: total,
+                paymentMethod: selectedPayment,
+                amountReceived: received,
+                change: selectedPayment === 'cash' ? Math.max(0, received - total) : 0,
+                notes: document.getElementById('saleNotes').value.trim(),
+                status: 'completed'
+            };
+
+            // Save sale
+            const sales = Store.get('sales');
+            sales.push(sale);
+            Store.set('sales', sales);
+
+            // Update inventory stock
+            const products = Store.get('products');
+            cart.forEach(cartItem => {
+                const prod = products.find(p => p.id === cartItem.productId);
+                if (prod) {
+                    prod.stock -= cartItem.qty;
+                    // Add movement record
+                    const movements = Store.get('movements');
+                    movements.push({
+                        id: 'mov_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        productId: prod.id,
+                        type: 'exit',
+                        quantity: -cartItem.qty,
+                        previousStock: prod.stock + cartItem.qty,
+                        newStock: prod.stock,
+                        notes: `Venta #${sale.id.slice(-6)} - ${currentSeller.name}`,
+                        date: new Date().toISOString()
+                    });
+                    Store.set('movements', movements);
+                }
+            });
+            Store.set('products', products);
+
+            // Clear cart and close
+            cart = [];
+            renderCart();
+            closeModal('paymentModal');
+            showToast(`Venta completada: ${formatMoney(total)}`, 'success');
+
+            // Show receipt
+            showReceipt(sale);
+        }
+
+        function showReceipt(sale) {
+            const settings = Store.getSettings();
+            const receiptHtml = `
+                <div class="receipt" id="printReceipt">
+                    <div class="receipt-header">
+                        <h4>${escapeHtml(settings.businessName)}</h4>
+                        <p>${new Date(sale.date).toLocaleString('es-ES')}</p>
+                        <p>Folio: ${sale.id.slice(-8).toUpperCase()}</p>
+                        <p>Vendedor: ${escapeHtml(sale.seller)}</p>
+                    </div>
+                    <div class="receipt-items">
+                        ${sale.items.map(i => `
+                            <div class="receipt-item">
+                                <span>${i.qty}x ${escapeHtml(i.name)}</span>
+                                <span>${formatMoney(i.price * i.qty)}</span>
+                            </div>
+                        `).join('')}
+                        <div class="receipt-total">
+                            <span>TOTAL</span>
+                            <span>${formatMoney(sale.total)}</span>
+                        </div>
+                        ${sale.paymentMethod === 'cash' ? `
+                            <div class="receipt-item"><span>Recibido</span><span>${formatMoney(sale.amountReceived)}</span></div>
+                            <div class="receipt-item"><span>Cambio</span><span>${formatMoney(sale.change)}</span></div>
+                        ` : `<div class="receipt-item"><span>Pago</span><span>${getPaymentLabel(sale.paymentMethod)}</span></div>`}
+                    </div>
+                    <div class="receipt-footer">
+                        <p>¡Gracias por su compra!</p>
+                        <p>---</p>
+                    </div>
+                </div>
+            `;
+
+            const modalBody = document.getElementById('saleDetailBody');
+            modalBody.innerHTML = receiptHtml + `<div style="text-align:center; margin-top:16px;"><button class="btn btn-primary" onclick="printReceipt()">🖨️ Imprimir Ticket</button></div>`;
+            document.getElementById('saleDetailModal').classList.add('active');
+        }
+
+        function printReceipt() {
+            const receipt = document.getElementById('printReceipt');
+            if (!receipt) return;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace; padding:20px;} .receipt{max-width:300px; margin:0 auto;}</style></head><body>${receipt.outerHTML}</body></html>`);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // ==================== SALES HISTORY ====================
+        function renderSalesHistory() {
+            let sales = Store.get('sales');
+            const fromDate = document.getElementById('historyDateFrom').value;
+            const toDate = document.getElementById('historyDateTo').value;
+            const paymentFilter = document.getElementById('historyPaymentFilter').value;
+
+            // Filter by current seller only
+            sales = sales.filter(s => s.sellerId === currentSeller.id || s.seller === currentSeller.name);
+
+            if (fromDate) {
+                const from = new Date(fromDate); from.setHours(0,0,0,0);
+                sales = sales.filter(s => new Date(s.date) >= from);
+            }
+            if (toDate) {
+                const to = new Date(toDate); to.setHours(23,59,59,999);
+                sales = sales.filter(s => new Date(s.date) <= to);
+            }
+            if (paymentFilter) {
+                sales = sales.filter(s => s.paymentMethod === paymentFilter);
+            }
+
+            sales.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const start = (historyPage - 1) * historyPerPage;
+            const paginated = sales.slice(start, start + historyPerPage);
+            const tbody = document.getElementById('salesHistoryTable');
+
+            if (paginated.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-light);">No hay ventas en este período</td></tr>`;
+                document.getElementById('historyPagination').innerHTML = '';
+                return;
+            }
+
+            tbody.innerHTML = paginated.map(s => `
+                <tr>
+                    <td><strong>#${s.id.slice(-6).toUpperCase()}</strong></td>
+                    <td>${new Date(s.date).toLocaleString('es-ES', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</td>
+                    <td>${escapeHtml(s.seller)}</td>
+                    <td>${s.items.reduce((sum, i) => sum + i.qty, 0)} artículos</td>
+                    <td><strong>${formatMoney(s.total)}</strong></td>
+                    <td>${getPaymentLabel(s.paymentMethod)}</td>
+                    <td><span class="status-badge status-${s.status}">${s.status === 'completed' ? '✓ Completada' : s.status}</span></td>
+                    <td><button class="btn btn-ghost btn-sm" onclick="viewSaleDetail('${s.id}')">Ver</button></td>
+                </tr>
+            `).join('');
+
+            renderHistoryPagination(sales.length);
+        }
+
+        function renderHistoryPagination(total) {
+            const pages = Math.ceil(total / historyPerPage);
+            const container = document.getElementById('historyPagination');
+            if (pages <= 1) { container.innerHTML = ''; return; }
+            let html = '';
+            for (let i = 1; i <= pages; i++) {
+                html += `<button class="page-btn ${i === historyPage ? 'active' : ''}" onclick="changeHistoryPage(${i})">${i}</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function changeHistoryPage(page) { historyPage = page; renderSalesHistory(); }
+
+        function viewSaleDetail(saleId) {
+            const sales = Store.get('sales');
+            const sale = sales.find(s => s.id === saleId);
+            if (!sale) return;
+            showReceipt(sale);
+        }
+
+        function printSaleDetail() { printReceipt(); }
+
+        function printSalesReport() {
+            window.print();
+        }
+
+        // ==================== CLOSE REGISTER ====================
+        function renderCloseSummary() {
+            const sales = Store.get('sales').filter(s =>
+                (s.sellerId === currentSeller?.id || s.seller === currentSeller?.name) &&
+                s.status === 'completed'
+            );
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales.filter(s => s.date.startsWith(today));
+
+            const totalSales = todaySales.length;
+            const totalAmount = todaySales.reduce((sum, s) => sum + s.total, 0);
+            const cashSales = todaySales.filter(s => s.paymentMethod === 'cash').reduce((sum, s) => sum + s.total, 0);
+            const cardSales = todaySales.filter(s => s.paymentMethod === 'card').reduce((sum, s) => sum + s.total, 0);
+            const transferSales = todaySales.filter(s => s.paymentMethod === 'transfer').reduce((sum, s) => sum + s.total, 0);
+
+            document.getElementById('closeSummary').innerHTML = `
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:20px;">
+                    <div class="stat-card"><div class="stat-value">${totalSales}</div><div class="stat-label">Ventas Hoy</div></div>
+                    <div class="stat-card"><div class="stat-value" style="color:var(--success);">${formatMoney(totalAmount)}</div><div class="stat-label">Total Vendido</div></div>
+                    <div class="stat-card"><div class="stat-value">${formatMoney(cashSales)}</div><div class="stat-label">Efectivo</div></div>
+                    <div class="stat-card"><div class="stat-value">${formatMoney(cardSales)}</div><div class="stat-label">Tarjeta</div></div>
+                    <div class="stat-card"><div class="stat-value">${formatMoney(transferSales)}</div><div class="stat-label">Transferencia</div></div>
+                </div>
+            `;
+        }
+
+        function generateCloseReport() {
+            const sales = Store.get('sales').filter(s =>
+                (s.sellerId === currentSeller?.id || s.seller === currentSeller?.name) &&
+                s.status === 'completed'
+            );
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales.filter(s => s.date.startsWith(today));
+
+            const totalAmount = todaySales.reduce((sum, s) => sum + s.total, 0);
+            const cashSales = todaySales.filter(s => s.paymentMethod === 'cash');
+            const cardSales = todaySales.filter(s => s.paymentMethod === 'card');
+            const transferSales = todaySales.filter(s => s.paymentMethod === 'transfer');
+
+            const reportHtml = `
+                <div class="receipt" id="closeReportReceipt" style="max-width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:24px;">
+                    <div class="receipt-header">
+                        <h4>CIERRE DE CAJA</h4>
+                        <p>${Store.getSettings().businessName}</p>
+                        <p>${new Date().toLocaleString('es-ES')}</p>
+                        <p>Vendedor: ${escapeHtml(currentSeller.name)}</p>
+                    </div>
+                    <div class="receipt-items">
+                        <div class="receipt-item"><span>Total Ventas</span><span>${todaySales.length}</span></div>
+                        <div class="receipt-item"><span>Efectivo (${cashSales.length})</span><span>${formatMoney(cashSales.reduce((s, v) => s + v.total, 0))}</span></div>
+                        <div class="receipt-item"><span>Tarjeta (${cardSales.length})</span><span>${formatMoney(cardSales.reduce((s, v) => s + v.total, 0))}</span></div>
+                        <div class="receipt-item"><span>Transferencia (${transferSales.length})</span><span>${formatMoney(transferSales.reduce((s, v) => s + v.total, 0))}</span></div>
+                        <div class="receipt-total"><span>TOTAL CAJA</span><span>${formatMoney(totalAmount)}</span></div>
+                    </div>
+                    <div class="receipt-footer"><p>--- Fin del cierre ---</p></div>
+                </div>
+            `;
+            document.getElementById('closeReportArea').innerHTML = reportHtml;
+        }
+
+        function printCloseReport() {
+            const report = document.getElementById('closeReportReceipt');
+            if (!report) { showToast('Genera el cierre primero', 'warning'); return; }
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<html><head><title>Cierre de Caja</title><style>body{font-family:monospace; padding:20px;}</style></head><body>${report.outerHTML}</body></html>`);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // ==================== TABS & NAVIGATION ====================
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            if (tabName === 'history') renderSalesHistory();
+            if (tabName === 'close') renderCloseSummary();
+        }
+
+        // ==================== UTILITIES ====================
+        function formatMoney(amount) {
+            const currency = Store.getSettings().currency || '$';
+            return currency + parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function getPaymentLabel(method) {
+            const labels = { cash: '💵 Efectivo', card: '💳 Tarjeta', transfer: '📱 Transferencia' };
+            return labels[method] || method;
+        }
+
+        function getEmoji(name) {
+            const n = name.toLowerCase();
+            if (n.includes('laptop')) return '💻';
+            if (n.includes('monitor')) return '🖥️';
+            if (n.includes('teclado')) return '⌨️';
+            if (n.includes('mouse')) return '🖱️';
+            if (n.includes('papel')) return '📄';
+            if (n.includes('carpeta')) return '📁';
+            if (n.includes('lámpara')) return '💡';
+            if (n.includes('silla')) return '🪑';
+            if (n.includes('pesas')) return '🏋️';
+            if (n.includes('yoga') || n.includes('colchoneta')) return '🧘';
+            return '📦';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✓', error: '✕', warning: '!' };
+            toast.innerHTML = `<span style="font-size:1.2rem;">${icons[type]}</span><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'fadeOut 0.3s ease forwards'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
+        });
+
+        // Init
+        checkSession();
+    </script>
+</body>
+</html>
